@@ -1,0 +1,166 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+model User {
+  id Int @id @default(autoincrement())
+
+  // Login Credentials
+  email String @unique
+  hash String
+
+  // About
+  shortBio String?
+  userType UserType
+
+  // contact
+  contactId Int? @unique
+  contact Contact? @relation(fields: [contactId], references: [id])
+
+  // listings and applications
+  listings Listing[] @relation("PostedListings")
+  applications Listing[] @relation("AppliedListings")
+
+  // Reviews
+  reviewsGiven Review[] @relation("ReviewsGiven")
+  Review Review[] @relation("ReviewsRecieved")
+
+
+  worker Worker?
+
+  hirer Hirer?
+
+  girm Firm?
+}
+
+model Contact {
+  id Int @id @default(autoincrement())
+  phoneNumber String
+  socialMedia String
+
+  
+
+
+  user User?
+}
+
+model Listing{
+  id Int @id @default(autoincrement())
+
+  // Listing Info
+  title String
+  compensation String
+  createdAt DateTime @default(now())
+  startDate DateTime
+
+  // Industry
+  industryId Int
+  industry Industry @relation(fields: [industryId], references: [id])
+  jobPosition String
+  
+  // Poster(owner of the listing)
+  posterId Int
+  poster User @relation("PostedListings", fields: [posterId], references: [id])
+
+  // Applicants
+  applicants User[] @relation("AppliedListings")
+
+  // Completed
+  workerId Int?
+  completedBy Worker? @relation("WorkerTasks", fields: [workerId], references: [userId])
+
+}
+
+model Industry {
+  id Int @id @default(autoincrement())
+  name String
+
+
+  listings Listing[]
+  workers Worker[]
+  firms Firm[]
+}
+
+model Worker{
+  userId Int @id
+
+  // Info
+  firstName String
+  lastName String
+  portfolioLink String
+  cvUrl String
+
+  // Industry
+  industryId Int
+  industry Industry @relation(fields: [industryId], references: [id])
+
+  // Tasks Done
+  tasksDone Listing[] @relation("WorkerTasks")
+  
+  // User Relation
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Hirer{
+  userId Int @id
+
+  // Info
+  firstName String
+  lastName String
+  address String
+
+  // User Relation
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Firm{
+  userId Int @id
+
+  // Info
+  name String
+  website String
+
+  // Industry
+  industryId Int
+  industry Industry @relation(fields: [industryId], references: [id])
+
+  // User Relation
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Review{
+  id Int @id @default(autoincrement())
+
+  // Basic Info
+  createdAt DateTime @default(now())
+
+  // Review
+  grade Float
+  comment String
+
+  // Poster
+  posterId Int
+  poster User @relation("ReviewsGiven", fields: [posterId], references: [id])
+
+  // Reciever
+  recieverId Int
+  reciever User @relation("ReviewsRecieved", fields: [recieverId], references: [id])
+}
+
+enum UserType {
+  WORKER
+  HIRER
+  FIRM
+}
